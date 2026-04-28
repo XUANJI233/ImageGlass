@@ -22,8 +22,19 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Source/ImageGlass/ImageGlass.csproj
 
-      - name: Build
-        run: dotnet build Source/ImageGlass/ImageGlass.csproj --configuration Release --no-restore
+      - name: Build with MSBuild
+        shell: pwsh
+        run: |
+          $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -latest -requires Microsoft.Component.MSBuild `
+            -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
+      
+          if (-not $msbuildPath) {
+            Write-Error "MSBuild not found."
+            exit 1
+          }
+      
+          & $msbuildPath Source/ImageGlass/ImageGlass.csproj /p:Configuration=Release /restore
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
