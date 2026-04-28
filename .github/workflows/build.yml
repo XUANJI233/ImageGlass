@@ -33,17 +33,8 @@ jobs:
 
           Write-Host "Using MSBuild: $msbuildPath"
 
-          # Get the .NET SDK path installed by setup-dotnet
-          $dotnetRoot = $env:DOTNET_ROOT
-          if (-not $dotnetRoot) { $dotnetRoot = "C:\Program Files\dotnet" }
-          $sdkVersion = (& "$dotnetRoot\dotnet.exe" --version).Trim()
-          Write-Host "Using .NET SDK: $sdkVersion from $dotnetRoot"
-
-          # Force MSBuild to use this SDK instead of VS-bundled one
-          $env:MSBuildSDKsPath = "$dotnetRoot\sdk\$sdkVersion\Sdks"
-
-          # Build with /restore (MSBuild does its own restore with the correct SDK)
-          & $msbuildPath Source/ImageGlass/ImageGlass.csproj /p:Configuration=Release /restore
+          # Build with /restore and specify Platform=x64
+          & $msbuildPath Source/ImageGlass/ImageGlass.csproj /p:Configuration=Release /p:Platform=x64 /restore
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
