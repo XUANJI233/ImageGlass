@@ -19,21 +19,30 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore Source/ImageGlass/ImageGlass.csproj
-
       - name: Build with MSBuild
         shell: pwsh
         run: |
-          $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
-            -latest -requires Microsoft.Component.MSBuild `
-            -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
-      
+          # Find MSBuild from Visual Studio (supports COM references)
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $msbuildPath = & $vswhere -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
+
           if (-not $msbuildPath) {
             Write-Error "MSBuild not found."
             exit 1
           }
-      
+
+          Write-Host "Using MSBuild: $msbuildPath"
+
+          # Get the .NET SDK path installed by setup-dotnet
+          $dotnetRoot = $env:DOTNET_ROOT
+          if (-not $dotnetRoot) { $dotnetRoot = "C:\Program Files\dotnet" }
+          $sdkVersion = (& "$dotnetRoot\dotnet.exe" --version).Trim()
+          Write-Host "Using .NET SDK: $sdkVersion from $dotnetRoot"
+
+          # Force MSBuild to use this SDK instead of VS-bundled one
+          $env:MSBuildSDKsPath = "$dotnetRoot\sdk\$sdkVersion\Sdks"
+
+          # Build with /restore (MSBuild does its own restore with the correct SDK)
           & $msbuildPath Source/ImageGlass/ImageGlass.csproj /p:Configuration=Release /restore
 
       - name: Upload build artifacts
