@@ -38,13 +38,17 @@ jobs:
           #   NETSDK1233           - .NET 10 not supported in VS 2022 17.14
           #   IDISP*               - IDisposable analyzer
           #   CA1051               - visible instance fields
-          $noWarn = "NU1901;NU1902;NU1903;NETSDK1233;IDISP001;IDISP003;IDISP004;IDISP015;CA1051"
+          # Use a response file to pass complex arguments (avoids PowerShell semicolon issues)
+          $rspFile = Join-Path $env:RUNNER_TEMP "msbuild.rsp"
+          @"
+Source/ImageGlass/ImageGlass.csproj
+/p:Configuration=Release
+/p:Platform=x64
+/p:NoWarn=NU1901;NU1902;NU1903;NETSDK1233;IDISP001;IDISP003;IDISP004;IDISP015;CA1051
+/restore
+"@ | Set-Content -Path $rspFile
 
-          & $msbuildPath Source/ImageGlass/ImageGlass.csproj `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:NoWarn=$noWarn `
-            /restore
+          & $msbuildPath "@$rspFile"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
