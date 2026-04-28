@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    branches: [v10]
+  pull_request:
+    branches: [v10]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Source/ImageGlass/ImageGlass.csproj
+
+      - name: Build
+        run: dotnet build Source/ImageGlass/ImageGlass.csproj --configuration Release --no-restore
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImageGlass-build
+          path: Source/ImageGlass/bin/Release/
